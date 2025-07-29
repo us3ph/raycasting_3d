@@ -25,6 +25,32 @@ int	get_texture_index(const char *id)
 	return (-1);
 }
 
+void check_dub_texture_id(t_config *config, int index)
+{
+	if (config->ids[index].id[0] != '\0')
+	{
+		err("Error:\nduplicate texture identifier\n");
+		exit(1);
+	}
+}
+
+void check_texture_extension(char *extension)
+{
+	if (!extension || ft_strcmp(extension, ".xpm") != 0)
+	{
+		err("Error:\ntexture must be .xpm file\n");
+		exit(1);
+	}
+}
+
+void check_texture_path(int fd)
+{
+	if (fd < 0)
+	{
+		err("Error:\ninvalid textures path\n");
+		exit(1);
+	}
+}
 int	pars_textures(char *line, t_config *config, const char *id)
 {
 	int		index;
@@ -34,8 +60,7 @@ int	pars_textures(char *line, t_config *config, const char *id)
 	index = get_texture_index(id);
 	if (index == -1)
 		return (1);
-	if (config->ids[index].id[0] != '\0')
-		err("Error:\nduplicate texture identifier\n"), exit(1);
+	check_dub_texture_id(config, index);
 	ft_strncpy(config->ids[index].id, id, 2);
 	config->ids[index].id[2] = '\0';
 	while (*line == ' ' || *line == '\t')
@@ -44,11 +69,9 @@ int	pars_textures(char *line, t_config *config, const char *id)
 	if (!config->ids[index].path)
 		return (1);
 	extension = ft_strrchr(config->ids[index].path, '.');
-	if (!extension || ft_strcmp(extension, ".xpm") != 0)
-		err("Error:\ntexture must be .xpm file\n"), exit(1);
+	check_texture_extension(extension);
 	fd = open(config->ids[index].path, O_RDONLY);
-	if (fd < 0)
-		err("Error:\ninvalid textures path\n"), exit(1);
+	check_texture_path(fd);
 	return (close(fd), 0);
 }
 

@@ -50,12 +50,28 @@ int	skip_to_map_start(int fd, t_game *game)
 	return (0);
 }
 
+int get_map_lines(int fd)
+{
+	char *line;
+	int map_lines;
+
+	map_lines = 0;
+		while (1)
+	{
+		line = get_next_line(fd);
+		if (!line)
+			break ;
+		map_lines++;
+		free(line);
+	}
+	return(map_lines);
+}
+
 int	preprocess_map_file(char *file, t_game *game)
 {
 	char	*line;
 	int		fd;
 	int		i;
-	int		map_lines;
 
 	i = 0;
 	fd = open(file, O_RDONLY);
@@ -67,16 +83,7 @@ int	preprocess_map_file(char *file, t_game *game)
 		free(line);
 		i++;
 	}
-	map_lines = 0;
-	while (1)
-	{
-		line = get_next_line(fd);
-		if (!line)
-			break ;
-		map_lines++;
-		free(line);
-	}
-	game->map_lines = map_lines;
+	game->map_lines = get_map_lines(fd);
 	close(fd);
 	return (0);
 }
@@ -120,7 +127,17 @@ int	check_white_spaces(char *str)
 	return (0);
 }
 
-int	read_map_lines(int fd, char **map, t_game *game)
+int check_newline_inside_map(int map_index, t_game *game, char **map)
+{
+		if (map_index < game->map_lines)
+		{
+			free_this_map(map, map_index);
+			return (-1);
+		}
+		return(0);
+}
+
+int map_loop(int fd, char **map, t_game *game)
 {
 	char	*line;
 	int		map_index;
@@ -134,11 +151,8 @@ int	read_map_lines(int fd, char **map, t_game *game)
 		if (line[0] == '\n')
 		{
 			free(line);
-			if (map_index < game->map_lines)
-			{
-				free_this_map(map, map_index);
-				return (-1);
-			}
+			if(check_newline_inside_map(map_index, game, map) == -1)
+				return(-1);
 			continue ;
 		}
 		if (!check_white_spaces(line))
@@ -149,6 +163,16 @@ int	read_map_lines(int fd, char **map, t_game *game)
 		map[map_index] = line;
 		map_index++;
 	}
+	return (map_index);
+}
+
+int	read_map_lines(int fd, char **map, t_game *game)
+{
+	int		map_index;
+
+	map_index = map_loop(fd, map, game);
+	if (map_index == -1)
+		return (-1);
 	map[map_index] = NULL;
 	return (0);
 }
